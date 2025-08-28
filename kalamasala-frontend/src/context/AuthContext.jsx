@@ -1,41 +1,91 @@
+// src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from "react";
+import * as jwtDecodeNS from "jwt-decode"; // import namespace to avoid default/import mismatch
+
+const safeDecode = (token) => {
+  // jwt-decode might be exported as function (ESM) or as default property (CJS)
+  if (!token) return null;
+  if (typeof jwtDecodeNS === "function") return jwtDecodeNS(token);
+  if (jwtDecodeNS && typeof jwtDecodeNS.default === "function") return jwtDecodeNS.default(token);
+  // last resort, try named export 'jwtDecode' (some builds)
+  if (jwtDecodeNS && typeof jwtDecodeNS.jwtDecode === "function") return jwtDecodeNS.jwtDecode(token);
+  throw new Error("jwt-decode import shape is unexpected");
+};
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);   // user object { username, email, etc. }
-  const [token, setToken] = useState(null); // JWT token
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // Load from localStorage on refresh
+  const fetchMe = async (jwtToken) => {
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed /me");
+      return await res.json();
+    } catch (err) {
+      // fallback to token decode
+      try {
+        const decoded = safeDecode(jwtToken);
+        return {
+          username: decoded.username ?? decoded.sub ?? decoded.email,
+          email: decoded.sub ?? decoded.email,
+          id: decoded.uid ?? null,
+          roles: decoded.roles ?? [],
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+  };
+
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
-
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
+    if (storedToken) {
       setToken(storedToken);
+      (async () => {
+        const u = await fetchMe(storedToken);
+        if (u) setUser(u);
+        else {
+          setToken(null);
+          localStorage.removeItem("token");
+        }
+      })();
     }
   }, []);
 
-  // Save to localStorage when user changes
   useEffect(() => {
-    if (user && token) {
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-    }
-  }, [user, token]);
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  }, [token]);
 
-  const login = (userData, jwtToken) => {
-    setUser(userData);
+  const login = async (jwtToken) => {
     setToken(jwtToken);
+    const u = await fetchMe(jwtToken);
+    if (u) setUser(u);
+    else {
+      try {
+        const decoded = safeDecode(jwtToken);
+        setUser({
+          username: decoded.username ?? decoded.sub ?? decoded.email,
+          email: decoded.sub ?? decoded.email,
+          id: decoded.uid ?? null,
+          roles: decoded.roles ?? [],
+        });
+      } catch {
+        setUser(null);
+      }
+    }
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    localStorage.removeItem("token");
   };
 
   return (

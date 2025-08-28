@@ -57,9 +57,8 @@ function Navbar() {
             {/* Auth Buttons */}
             {user ? (
               <>
-                <span className="ml-4 text-sm font-medium">Hello, {user.username}</span>
-                <button
-                  onClick={logout}
+                  <span className="ml-4 text-sm font-medium">Hello, {user?.username ?? user?.email}</span>
+                  <button onClick={logout}
                   className="ml-2 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Logout

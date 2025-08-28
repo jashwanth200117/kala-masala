@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
@@ -21,17 +22,18 @@ function Login() {
       });
 
       if (!res.ok) {
-        throw new Error("Invalid credentials");
+        const errText = await res.text();
+        throw new Error(errText || "Invalid credentials");
       }
 
       const data = await res.json();
 
-      // Use AuthContext login instead of just localStorage
-      login(data.user, data.token);
+      // Pass token string only (backend returns { token: "..." })
+      login(data.token);
 
       navigate("/"); // redirect to homepage
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Login failed");
     }
   };
 
