@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useDispatch } from "react-redux";
+import { addItem } from "../redux/cartSlice";
 
 function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
+  const [qty, setQty] = useState(1);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -29,13 +31,15 @@ function ProductDetail() {
   if (!product) return <div>Product not found</div>;
 
   const handleAddToCart = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      image: product.imageUrl, // backend sends this
-      qty: 1,
-    });
+    dispatch(
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        image: product.imageUrl, // backend sends this
+        qty,
+      })
+    );
   };
 
   return (
@@ -56,9 +60,19 @@ function ProductDetail() {
         <div className="mt-6">
           <label className="block mb-1 text-sm font-medium">Quantity</label>
           <div className="flex items-center gap-3">
-            <button className="px-3 py-1 border rounded">-</button>
-            <div>1</div>
-            <button className="px-3 py-1 border rounded">+</button>
+            <button
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="px-3 py-1 border rounded"
+            >
+              -
+            </button>
+            <div>{qty}</div>
+            <button
+              onClick={() => setQty((q) => q + 1)}
+              className="px-3 py-1 border rounded"
+            >
+              +
+            </button>
             <button
               onClick={handleAddToCart}
               className="ml-auto bg-accent text-white px-4 py-2 rounded"

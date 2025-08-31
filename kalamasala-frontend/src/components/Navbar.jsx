@@ -1,9 +1,8 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-// import { AuthContext } from "../context/AuthContext"; // 👈 import AuthContext
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/authSlice";
+import { logout, selectUser } from "../redux/authSlice";
+import { selectTotalItems } from "../redux/cartSlice";
 
 const navItems = [
   { to: "/", label: "Home" },
@@ -14,9 +13,8 @@ const navItems = [
 
 function Navbar() {
   const [open, setOpen] = useState(false);
-  const { totalItems } = useCart();
-//   const { user, logout } = useContext(AuthContext); // 👈 get user and logout
-  const { user } = useSelector((state) => state.auth);
+  const totalItems = useSelector(selectTotalItems); // ✅ from Redux
+  const user = useSelector(selectUser); // ✅ from Redux
   const dispatch = useDispatch();
 
   return (
@@ -29,7 +27,9 @@ function Navbar() {
               <div className="w-10 h-10 rounded-md bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold">
                 KM
               </div>
-              <span className="text-xl font-semibold text-gray-800">KalaMasala</span>
+              <span className="text-xl font-semibold text-gray-800">
+                KalaMasala
+              </span>
             </Link>
           </div>
 
@@ -40,7 +40,8 @@ function Navbar() {
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  "text-sm font-medium " + (isActive ? "text-accent" : "text-gray-700 hover:text-accent")
+                  "text-sm font-medium " +
+                  (isActive ? "text-accent" : "text-gray-700 hover:text-accent")
                 }
               >
                 {n.label}
@@ -48,9 +49,22 @@ function Navbar() {
             ))}
 
             {/* Cart */}
-            <Link to="/cart" className="relative inline-flex items-center gap-2 text-gray-700 hover:text-accent">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4"></path>
+            <Link
+              to="/cart"
+              className="relative inline-flex items-center gap-2 text-gray-700 hover:text-accent"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4"
+                ></path>
               </svg>
               <span className="text-sm">Cart</span>
               <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-accent text-white text-xs">
@@ -61,8 +75,11 @@ function Navbar() {
             {/* Auth Buttons */}
             {user ? (
               <>
-                  <span className="ml-4 text-sm font-medium">Hello, {user.username}</span>
-                  <button onClick={() => dispatch(logout())}
+                <span className="ml-4 text-sm font-medium">
+                  Hello, {user.username}
+                </span>
+                <button
+                  onClick={() => dispatch(logout())}
                   className="ml-2 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Logout
@@ -70,7 +87,10 @@ function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" className="ml-4 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                <Link
+                  to="/login"
+                  className="ml-4 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50"
+                >
                   Login
                 </Link>
                 <Link
@@ -93,12 +113,21 @@ function Navbar() {
               className="p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none"
               aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d={open ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                  d={
+                    open
+                      ? "M6 18L18 6M6 6l12 12"
+                      : "M4 6h16M4 12h16M4 18h16"
+                  }
                 />
               </svg>
             </button>
@@ -116,7 +145,10 @@ function Navbar() {
                 to={n.to}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  "block px-2 py-2 rounded-md " + (isActive ? "text-accent font-medium" : "text-gray-700 hover:bg-gray-50")
+                  "block px-2 py-2 rounded-md " +
+                  (isActive
+                    ? "text-accent font-medium"
+                    : "text-gray-700 hover:bg-gray-50")
                 }
               >
                 {n.label}
@@ -126,10 +158,12 @@ function Navbar() {
             {/* Mobile Auth Buttons */}
             {user ? (
               <>
-                <span className="block px-2 py-2 text-gray-700">Hello, {user.username}</span>
+                <span className="block px-2 py-2 text-gray-700">
+                  Hello, {user.username}
+                </span>
                 <button
                   onClick={() => {
-                    logout();
+                    dispatch(logout());
                     setOpen(false);
                   }}
                   className="block w-full text-left px-2 py-2 rounded-md text-gray-700 hover:bg-gray-50"
