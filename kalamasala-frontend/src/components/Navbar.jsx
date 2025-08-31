@@ -1,7 +1,9 @@
 import React, { useState, useContext } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { AuthContext } from "../context/AuthContext"; // 👈 import AuthContext
+// import { AuthContext } from "../context/AuthContext"; // 👈 import AuthContext
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../redux/authSlice";
 
 const navItems = [
   { to: "/", label: "Home" },
@@ -13,7 +15,9 @@ const navItems = [
 function Navbar() {
   const [open, setOpen] = useState(false);
   const { totalItems } = useCart();
-  const { user, logout } = useContext(AuthContext); // 👈 get user and logout
+//   const { user, logout } = useContext(AuthContext); // 👈 get user and logout
+  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
   return (
     <header className="w-full bg-white border-b">
@@ -57,8 +61,8 @@ function Navbar() {
             {/* Auth Buttons */}
             {user ? (
               <>
-                  <span className="ml-4 text-sm font-medium">Hello, {user?.username ?? user?.email}</span>
-                  <button onClick={logout}
+                  <span className="ml-4 text-sm font-medium">Hello, {user.username}</span>
+                  <button onClick={() => dispatch(logout())}
                   className="ml-2 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Logout

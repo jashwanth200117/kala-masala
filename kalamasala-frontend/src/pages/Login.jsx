@@ -1,14 +1,15 @@
 // src/pages/Login.jsx
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useDispatch } from "react-redux";
+import { loginSuccess, fetchMe } from "../redux/authSlice";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // 👈 use AuthContext
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,9 +28,10 @@ function Login() {
       }
 
       const data = await res.json();
-
-      // Pass token string only (backend returns { token: "..." })
-      login(data.token);
+      const token = data.token;
+            // Save token and fetch user
+      dispatch(loginSuccess(token));
+      dispatch(fetchMe(token));
 
       navigate("/"); // redirect to homepage
     } catch (err) {
