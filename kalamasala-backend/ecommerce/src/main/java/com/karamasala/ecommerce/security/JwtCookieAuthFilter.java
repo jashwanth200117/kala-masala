@@ -2,9 +2,9 @@ package com.karamasala.ecommerce.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,12 +15,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwt;
     private final CustomUserDetailsService uds;
 
-    public JwtAuthFilter(JwtUtil jwt, CustomUserDetailsService uds) {
+    public JwtCookieAuthFilter(JwtUtil jwt, CustomUserDetailsService uds) {
         this.jwt = jwt;
         this.uds = uds;
     }
@@ -30,12 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = null;
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        }
+        String token = extractTokenFromCookies(request.getCookies());
 
         if (token != null && jwt.isValid(token)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -52,5 +47,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private String extractTokenFromCookies(Cookie[] cookies) {
+        if (cookies == null) return null;
+        for (Cookie c : cookies) {
+            if ("Authentication".equals(c.getName())) {
+                return c.getValue();
+            }
+        }
+        return null;
     }
 }

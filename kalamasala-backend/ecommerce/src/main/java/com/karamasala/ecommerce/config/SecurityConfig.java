@@ -1,6 +1,7 @@
 package com.karamasala.ecommerce.config;
 
-import com.karamasala.ecommerce.security.JwtAuthFilter;
+import com.karamasala.ecommerce.security.CsrfDoubleCookieFilter;
+import com.karamasala.ecommerce.security.JwtCookieAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,18 +18,22 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtFilter;
+    private final JwtCookieAuthFilter jwtCookieFilter;
+    private final CsrfDoubleCookieFilter csrfDoubleCookieFilter;
     private final UserDetailsService uds;
 
-    public SecurityConfig(JwtAuthFilter jwtFilter, UserDetailsService uds) {
-        this.jwtFilter = jwtFilter;
+    public SecurityConfig(JwtCookieAuthFilter jwtCookieFilter,
+                          CsrfDoubleCookieFilter csrfDoubleCookieFilter,
+                          UserDetailsService uds) {
+        this.jwtCookieFilter = jwtCookieFilter;
+        this.csrfDoubleCookieFilter = csrfDoubleCookieFilter;
         this.uds = uds;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // using JWT, stateless
+                .csrf(csrf -> csrf.disable()) // we handle CSRF manually
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -40,7 +45,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(daoAuthProvider())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(csrfDoubleCookieFilter, JwtCookieAuthFilter.class);
 
         return http.build();
     }

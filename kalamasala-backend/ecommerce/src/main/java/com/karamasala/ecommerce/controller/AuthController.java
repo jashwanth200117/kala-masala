@@ -1,13 +1,17 @@
 package com.karamasala.ecommerce.controller;
 
-import com.karamasala.ecommerce.dto.*;
+import com.karamasala.ecommerce.dto.AuthRequest;
+import com.karamasala.ecommerce.dto.RegisterRequest;
+import com.karamasala.ecommerce.dto.UserDto;
 import com.karamasala.ecommerce.model.User;
 import com.karamasala.ecommerce.repository.UserRepository;
 import com.karamasala.ecommerce.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.Cookie;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,9 +32,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest req) {
-        String token = auth.login(req);
-        return ResponseEntity.ok(new AuthResponse(token));
+    public ResponseEntity<UserDto> login(@RequestBody AuthRequest req, HttpServletResponse response) {
+        User u = auth.login(req, response);
+        // Cookies are already set in the response by AuthServiceImpl
+        return ResponseEntity.ok(new UserDto(u.getId(), u.getUsername(), u.getEmail()));
     }
 
     @GetMapping("/me")
@@ -38,5 +43,26 @@ public class AuthController {
         if (principal == null) return ResponseEntity.status(401).build();
         var u = users.findByEmail(principal.getUsername()).orElseThrow();
         return ResponseEntity.ok(new UserDto(u.getId(), u.getUsername(), u.getEmail()));
+    }
+
+    @PostMapping("/logout")
+    public String logout(HttpServletResponse response) {
+        // Clear the HttpOnly cookie by setting maxAge = 0
+        Cookie jwtCookie = new Cookie("AUTH-TOKEN", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setSecure(true); // in prod
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+
+        // Also clear the XSRF token cookie
+        Cookie csrfCookie = new Cookie("XSRF-TOKEN", null);
+        csrfCookie.setHttpOnly(false); // frontend needs to read this one
+        csrfCookie.setSecure(true);
+        csrfCookie.setPath("/");
+        csrfCookie.setMaxAge(0);
+        response.addCookie(csrfCookie);
+
+        return "Logged out successfully";
     }
 }
