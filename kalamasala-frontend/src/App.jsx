@@ -1,8 +1,8 @@
-// App.jsx
+// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchMe, setHydrated } from "./redux/authSlice";
+import { fetchMe } from "./redux/authSlice";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -18,18 +18,14 @@ import Contact from "./pages/Contact";
 
 function App() {
   const dispatch = useDispatch();
-  const { token, hydrated } = useSelector((state) => state.auth);
+  const { hydrated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (token) {
-      dispatch(fetchMe(token));
-    } else {
-      dispatch(setHydrated(true)); // 👈 mark as finished even without token
-    }
-  }, [token, dispatch]);
+    dispatch(fetchMe()); // 👈 cookies decide
+  }, [dispatch]);
 
   if (!hydrated) {
-    return <div>Loading...</div>; // 👈 prevents false "logout"
+    return <div>Loading...</div>;
   }
 
   return (

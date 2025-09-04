@@ -1,8 +1,8 @@
 // src/pages/Login.jsx
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess, fetchMe } from "../redux/authSlice";
+import { fetchMe } from "../redux/authSlice";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,6 +18,7 @@ function Login() {
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
+        credentials: "include", // 👈 store cookies
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -27,13 +28,9 @@ function Login() {
         throw new Error(errText || "Invalid credentials");
       }
 
-      const data = await res.json();
-      const token = data.token;
-            // Save token and fetch user
-      dispatch(loginSuccess(token));
-      dispatch(fetchMe(token));
-
-      navigate("/"); // redirect to homepage
+      // cookies are set → fetch user
+      await dispatch(fetchMe());
+      navigate("/");
     } catch (err) {
       setError(err.message || "Login failed");
     }

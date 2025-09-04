@@ -48,7 +48,7 @@ public class AuthController {
     @PostMapping("/logout")
     public String logout(HttpServletResponse response) {
         // Clear the HttpOnly cookie by setting maxAge = 0
-        Cookie jwtCookie = new Cookie("AUTH-TOKEN", null);
+        Cookie jwtCookie = new Cookie("Authentication", null);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setSecure(true); // in prod
         jwtCookie.setPath("/");

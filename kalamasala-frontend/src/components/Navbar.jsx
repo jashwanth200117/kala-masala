@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { logout, selectUser } from "../redux/authSlice";
+import { logoutSuccess, selectUser } from "../redux/authSlice";
 import { selectTotalItems } from "../redux/cartSlice";
 
 const navItems = [
@@ -13,9 +13,22 @@ const navItems = [
 
 function Navbar() {
   const [open, setOpen] = useState(false);
-  const totalItems = useSelector(selectTotalItems); // ✅ from Redux
-  const user = useSelector(selectUser); // ✅ from Redux
+  const totalItems = useSelector(selectTotalItems);
+  const user = useSelector(selectUser);
   const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include", // 👈 important, so cookies are sent
+      });
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      dispatch(logoutSuccess()); // clear Redux state
+    }
+  };
 
   return (
     <header className="w-full bg-white border-b">
@@ -79,7 +92,7 @@ function Navbar() {
                   Hello, {user.username}
                 </span>
                 <button
-                  onClick={() => dispatch(logout())}
+                  onClick={handleLogout}
                   className="ml-2 px-4 py-1.5 border rounded-md text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Logout
@@ -163,7 +176,7 @@ function Navbar() {
                 </span>
                 <button
                   onClick={() => {
-                    dispatch(logout());
+                    handleLogout();
                     setOpen(false);
                   }}
                   className="block w-full text-left px-2 py-2 rounded-md text-gray-700 hover:bg-gray-50"
