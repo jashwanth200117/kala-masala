@@ -1,41 +1,55 @@
 package com.karamasala.ecommerce.controller;
 
-import com.karamasala.ecommerce.model.CartItem;
+import com.karamasala.ecommerce.dto.AddCartItemRequest;
+import com.karamasala.ecommerce.dto.CartDto;
+import com.karamasala.ecommerce.dto.UpdateCartItemRequest;
 import com.karamasala.ecommerce.service.CartService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
 
-    private final CartService cartService;
+    private final CartService carts;
 
-    public CartController(CartService cartService) {
-        this.cartService = cartService;
+    public CartController(CartService carts) {
+        this.carts = carts;
     }
 
     @GetMapping
-    public ResponseEntity<List<CartItem>> getCartItems() {
-        return ResponseEntity.ok(cartService.getCartItems());
+    public ResponseEntity<CartDto> get(@AuthenticationPrincipal UserDetails principal) {
+        String email = principal.getUsername();
+        return ResponseEntity.ok(carts.getMyCart(email));
     }
 
-    @PostMapping
-    public ResponseEntity<CartItem> addCartItem(@RequestBody CartItem cartItem) {
-        return ResponseEntity.ok(cartService.addCartItem(cartItem));
+    @PostMapping("/items")
+    public ResponseEntity<CartDto> add(@AuthenticationPrincipal UserDetails principal,
+                                       @RequestBody AddCartItemRequest req) {
+        String email = principal.getUsername();
+        return ResponseEntity.ok(carts.addItem(email, req.productId(), req.quantity()));
     }
 
-    @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> removeCartItem(@PathVariable Long productId) {
-        cartService.removeCartItem(productId);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/items/{productId}")
+    public ResponseEntity<CartDto> update(@AuthenticationPrincipal UserDetails principal,
+                                          @PathVariable Long productId,
+                                          @RequestBody UpdateCartItemRequest req) {
+        String email = principal.getUsername();
+        return ResponseEntity.ok(carts.updateItem(email, productId, req.quantity()));
     }
 
-    @DeleteMapping("/clear")
-    public ResponseEntity<Void> clearCart() {
-        cartService.clearCart();
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<CartDto> remove(@AuthenticationPrincipal UserDetails principal,
+                                          @PathVariable Long productId) {
+        String email = principal.getUsername();
+        return ResponseEntity.ok(carts.removeItem(email, productId));
+    }
+
+    @DeleteMapping("/items")
+    public ResponseEntity<CartDto> clear(@AuthenticationPrincipal UserDetails principal) {
+        String email = principal.getUsername();
+        return ResponseEntity.ok(carts.clear(email));
     }
 }
