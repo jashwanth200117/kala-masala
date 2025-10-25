@@ -2,6 +2,9 @@ package com.karamasala.ecommerce.service.impl;
 
 import com.karamasala.ecommerce.dto.OrderDto;
 import com.karamasala.ecommerce.dto.OrderItemDto;
+import com.karamasala.ecommerce.exception.BadRequestException;
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
+import com.karamasala.ecommerce.exception.UnauthorizedException;
 import com.karamasala.ecommerce.model.*;
 import com.karamasala.ecommerce.repository.CartRepository;
 import com.karamasala.ecommerce.repository.OrderRepository;
@@ -33,11 +36,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDto checkout(String email) {
-        User u = users.findByEmail(email).orElseThrow();
-        Cart cart = carts.findByUser(u).orElseThrow(() -> new IllegalStateException("Cart not found"));
+        User u = users.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Cart cart = carts.findByUser(u)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         if (cart.getItems().isEmpty()) {
-            throw new IllegalStateException("Cart is empty");
+            throw new BadRequestException("Cart is empty, cannot checkout");
         }
 
         Order order = Order.builder()
@@ -50,8 +56,9 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> oiList = new ArrayList<>();
 
         for (CartItem ci : cart.getItems()) {
-            // re-read product for current price
-            Product p = products.findById(ci.getProductId()).orElseThrow();
+            Product p = products.findById(ci.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id " + ci.getProductId()));
+
             double unit = p.getPrice();
             int qty = ci.getQuantity();
             double line = unit * qty;
@@ -83,16 +90,21 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDto> myOrders(String email) {
-        User u = users.findByEmail(email).orElseThrow();
+        User u = users.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return orders.findByUserOrderByCreatedAtDesc(u).stream().map(this::map).toList();
     }
 
     @Override
     public OrderDto getOrder(String email, Long orderId) {
-        User u = users.findByEmail(email).orElseThrow();
-        Order o = orders.findById(orderId).orElseThrow();
+        User u = users.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Order o = orders.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + orderId));
+
         if (!o.getUser().getId().equals(u.getId())) {
-            throw new SecurityException("Not your order");
+            throw new UnauthorizedException("You are not allowed to view this order");
         }
         return map(o);
     }

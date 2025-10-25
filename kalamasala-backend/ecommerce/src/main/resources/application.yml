@@ -19,3 +19,8 @@ app:
   jwt:
     secret: change-this-to-a-long-random-string
     expiration-ms: 86400000   # 1 day
+
+razorpay:
+  key:
+    id: rzp_test_RRG7joQAI0vrVr
+    secret: LQmGC5sBLa1Lu76ubOsSYNGv

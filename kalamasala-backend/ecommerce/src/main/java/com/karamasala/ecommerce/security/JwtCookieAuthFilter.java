@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,18 +33,25 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookies(request.getCookies());
 
-        if (token != null && jwt.isValid(token)
-                && SecurityContextHolder.getContext().getAuthentication() == null) {
+        try {
+            if (token != null && jwt.isValid(token)
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            String email = jwt.getSubject(token);
-            UserDetails userDetails = uds.loadUserByUsername(email);
+                String email = jwt.getSubject(token);
+                UserDetails userDetails = uds.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+        } catch (Exception e) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Invalid or expired JWT\"}");
+            return;
         }
 
         chain.doFilter(request, response);

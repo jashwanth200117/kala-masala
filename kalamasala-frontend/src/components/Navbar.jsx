@@ -3,6 +3,7 @@ import { NavLink, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutSuccess, selectUser } from "../redux/authSlice";
 import { selectTotalItems } from "../redux/cartSlice";
+import { resetCart } from "../redux/cartSlice";
 
 const navItems = [
   { to: "/", label: "Home" },
@@ -27,6 +28,7 @@ function Navbar() {
       console.error("Logout request failed:", err);
     } finally {
       dispatch(logoutSuccess()); // clear Redux state
+      dispatch(resetCart());
     }
   };
 

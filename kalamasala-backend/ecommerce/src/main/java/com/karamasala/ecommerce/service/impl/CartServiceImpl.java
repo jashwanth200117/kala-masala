@@ -2,9 +2,11 @@ package com.karamasala.ecommerce.service.impl;
 
 import com.karamasala.ecommerce.dto.CartDto;
 import com.karamasala.ecommerce.dto.CartItemDto;
+import com.karamasala.ecommerce.exception.BadRequestException;
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.model.Cart;
 import com.karamasala.ecommerce.model.CartItem;
-import com.karamasala.ecommerce.model.Product; // assuming you have this
+import com.karamasala.ecommerce.model.Product;
 import com.karamasala.ecommerce.model.User;
 import com.karamasala.ecommerce.repository.CartRepository;
 import com.karamasala.ecommerce.repository.ProductRepository;
@@ -37,14 +39,17 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDto addItem(String email, Long productId, int quantity) {
-        if (quantity <= 0) quantity = 1;
+        if (quantity <= 0) {
+            throw new BadRequestException("Quantity must be at least 1");
+        }
 
         Cart cart = getOrCreateCart(email);
         CartItem existing = cart.getItems().stream()
                 .filter(ci -> ci.getProductId().equals(productId))
                 .findFirst().orElse(null);
 
-        Product p = products.findById(productId).orElseThrow();
+        Product p = products.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id " + productId));
 
         if (existing == null) {
             CartItem ci = CartItem.builder()
@@ -57,7 +62,6 @@ public class CartServiceImpl implements CartService {
             cart.addItem(ci);
         } else {
             existing.setQuantity(existing.getQuantity() + quantity);
-            // optional: refresh unit price for display
             existing.setUnitPrice(p.getPrice());
             existing.setProductName(p.getName());
             existing.setImageUrl(p.getImageUrl());
@@ -73,7 +77,7 @@ public class CartServiceImpl implements CartService {
         CartItem ci = cart.getItems().stream()
                 .filter(x -> x.getProductId().equals(productId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Item not in cart"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not in cart"));
 
         if (quantity <= 0) {
             cart.removeItem(ci);
@@ -87,7 +91,12 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartDto removeItem(String email, Long productId) {
         Cart cart = getOrCreateCart(email);
-        cart.getItems().removeIf(ci -> ci.getProductId().equals(productId));
+        boolean removed = cart.getItems().removeIf(ci -> ci.getProductId().equals(productId));
+
+        if (!removed) {
+            throw new ResourceNotFoundException("Item not found in cart");
+        }
+
         carts.save(cart);
         return map(cart);
     }
@@ -101,7 +110,8 @@ public class CartServiceImpl implements CartService {
     }
 
     private Cart getOrCreateCart(String email) {
-        User u = users.findByEmail(email).orElseThrow();
+        User u = users.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return carts.findByUser(u).orElseGet(() -> carts.save(Cart.builder().user(u).build()));
     }
 

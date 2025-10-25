@@ -15,18 +15,22 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import { fetchCart } from "./redux/cartSlice";
 
 function App() {
   const dispatch = useDispatch();
-  const { hydrated } = useSelector((state) => state.auth);
+  const { hydrated, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchMe()); // 👈 cookies decide
+    dispatch(fetchMe());
   }, [dispatch]);
 
-  if (!hydrated) {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchCart()); // ✅ sync cart after login
+    }
+  }, [user, dispatch]);
+
 
   return (
     <div className="flex flex-col min-h-screen">

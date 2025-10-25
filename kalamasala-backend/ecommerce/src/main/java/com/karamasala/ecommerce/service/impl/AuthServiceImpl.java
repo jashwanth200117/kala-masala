@@ -2,6 +2,8 @@ package com.karamasala.ecommerce.service.impl;
 
 import com.karamasala.ecommerce.dto.AuthRequest;
 import com.karamasala.ecommerce.dto.RegisterRequest;
+import com.karamasala.ecommerce.exception.BadRequestException;
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.model.User;
 import com.karamasala.ecommerce.repository.UserRepository;
 import com.karamasala.ecommerce.security.JwtUtil;
@@ -39,10 +41,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public User register(RegisterRequest req) {
         if (users.existsByEmail(req.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new BadRequestException("Email already in use");
         }
         if (users.existsByUsername(req.getUsername())) {
-            throw new IllegalArgumentException("Username already in use");
+            throw new BadRequestException("Username already in use");
         }
 
         User u = User.builder()
@@ -64,28 +66,25 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        var user = users.findByEmail(req.getEmail()).orElseThrow();
+        var user = users.findByEmail(req.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 1. Generate JWT
         String jwtToken = jwt.generateToken(
                 user.getEmail(),
                 Map.of("uid", user.getId(), "roles", user.getRoles(), "username", user.getUsername())
         );
 
-        // 2. Generate CSRF token (random string)
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String csrfToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
-        // 3. Set Authentication cookie (HttpOnly, Secure, SameSite=Strict)
         Cookie authCookie = new Cookie("Authentication", jwtToken);
         authCookie.setHttpOnly(true);
-        authCookie.setSecure(true); // only over HTTPS
+        authCookie.setSecure(true);
         authCookie.setPath("/");
         authCookie.setMaxAge(24 * 60 * 60);
         response.addCookie(authCookie);
 
-        // 4. Set CSRF cookie (accessible by JS)
         Cookie csrfCookie = new Cookie("XSRF-TOKEN", csrfToken);
         csrfCookie.setHttpOnly(false);
         csrfCookie.setSecure(true);

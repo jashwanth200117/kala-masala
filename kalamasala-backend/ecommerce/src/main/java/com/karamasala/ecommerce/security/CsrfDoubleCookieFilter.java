@@ -26,8 +26,8 @@ public class CsrfDoubleCookieFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Only enforce CSRF on state-changing methods
         String method = request.getMethod();
+        // Only enforce CSRF on state-changing methods
         if (method.equalsIgnoreCase("POST") ||
                 method.equalsIgnoreCase("PUT") ||
                 method.equalsIgnoreCase("DELETE") ||
@@ -36,8 +36,17 @@ public class CsrfDoubleCookieFilter extends OncePerRequestFilter {
             String csrfHeader = request.getHeader("X-XSRF-TOKEN");
             String csrfCookie = extractCookie(request.getCookies(), "XSRF-TOKEN");
 
-            if (csrfHeader == null || csrfCookie == null || !csrfHeader.equals(csrfCookie)) {
-                response.sendError(HttpStatus.FORBIDDEN.value(), "Invalid CSRF token");
+//            if (csrfHeader == null || csrfCookie == null || !csrfHeader.equals(csrfCookie)) {
+//                response.setStatus(HttpStatus.FORBIDDEN.value());
+//                response.setContentType("application/json");
+//                response.getWriter().write("{\"error\": \"Invalid or missing CSRF token\"}");
+//                return;
+//            }
+
+            if (csrfCookie == null) {
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Invalid or missing CSRF token\"}");
                 return;
             }
         }

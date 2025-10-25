@@ -1,5 +1,6 @@
 package com.karamasala.ecommerce.service.impl;
 
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.model.Product;
 import com.karamasala.ecommerce.repository.ProductRepository;
 import com.karamasala.ecommerce.service.ProductService;
@@ -24,7 +25,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProduct(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with id " + id + " not found"));
     }
 
     @Override
@@ -45,6 +46,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Product with id " + id + " not found");
+        }
         productRepository.deleteById(id);
     }
 }

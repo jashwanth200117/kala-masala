@@ -1,49 +1,75 @@
 // src/redux/cartSlice.js
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "../utils/axios";
 
-const initialState = {
-  items: [], // 👈 persist will handle storage
-};
+axios.defaults.withCredentials = true;
 
+// --- Async thunks ---
+export const fetchCart = createAsyncThunk("cart/fetchCart", async () => {
+  const res = await axios.get("http://localhost:8080/api/cart");
+  return res.data;
+});
+
+export const addToCart = createAsyncThunk("cart/addToCart", async ({ productId, quantity }) => {
+  const res = await axios.post("http://localhost:8080/api/cart/items", { productId, quantity });
+  return res.data;
+});
+
+export const updateCartItem = createAsyncThunk("cart/updateCartItem", async ({ itemId, quantity }) => {
+  const res = await axios.patch(`http://localhost:8080/api/cart/items/${itemId}`, { quantity });
+  return res.data;
+});
+
+export const removeFromCart = createAsyncThunk("cart/removeFromCart", async (itemId) => {
+  const res = await axios.delete(`http://localhost:8080/api/cart/items/${itemId}`);
+  return res.data;
+});
+
+export const clearCart = createAsyncThunk("cart/clearCart", async () => {
+  const res = await axios.delete("http://localhost:8080/api/cart");
+  return res.data;
+});
+
+// --- Slice ---
 const cartSlice = createSlice({
   name: "cart",
-  initialState,
+  initialState: { items: [], subtotal: 0, status: "idle" },
   reducers: {
-    addItem: (state, action) => {
-      const item = action.payload;
-      const idx = state.items.findIndex((i) => i.id === item.id);
-
-      if (idx >= 0) {
-        state.items[idx].qty += item.qty || 1;
-      } else {
-        state.items.push({ ...item, qty: item.qty || 1 });
-      }
-    },
-    removeItem: (state, action) => {
-      state.items = state.items.filter((i) => i.id !== action.payload);
-    },
-    updateQty: (state, action) => {
-      const { id, qty } = action.payload;
-      if (qty <= 0) {
-        state.items = state.items.filter((i) => i.id !== id);
-      } else {
-        const item = state.items.find((i) => i.id === id);
-        if (item) item.qty = qty;
-      }
-    },
-    clearCart: (state) => {
+    resetCart: (state) => {
       state.items = [];
+      state.subtotal = 0;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCart.fulfilled, (state, action) => {
+        state.items = action.payload.items;
+        state.subtotal = action.payload.subtotal;
+      })
+      .addCase(addToCart.fulfilled, (state, action) => {
+        state.items = action.payload.items;
+        state.subtotal = action.payload.subtotal;
+      })
+      .addCase(updateCartItem.fulfilled, (state, action) => {
+        state.items = action.payload.items;
+        state.subtotal = action.payload.subtotal;
+      })
+      .addCase(removeFromCart.fulfilled, (state, action) => {
+        state.items = action.payload.items;
+        state.subtotal = action.payload.subtotal;
+      })
+      .addCase(clearCart.fulfilled, (state) => {
+        state.items = [];
+        state.subtotal = 0;
+      });
   },
 });
 
-export const { addItem, removeItem, updateQty, clearCart } = cartSlice.actions;
+export const { resetCart } = cartSlice.actions;
 
-// Selectors
 export const selectCartItems = (state) => state.cart.items;
 export const selectTotalItems = (state) =>
-  state.cart.items.reduce((acc, i) => acc + i.qty, 0);
-export const selectSubtotal = (state) =>
-  state.cart.items.reduce((acc, i) => acc + i.qty * Number(i.price || 0), 0);
+  state.cart.items.reduce((acc, i) => acc + i.quantity, 0);
+export const selectSubtotal = (state) => state.cart.subtotal;
 
 export default cartSlice.reducer;

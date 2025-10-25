@@ -1,5 +1,6 @@
 package com.karamasala.ecommerce.controller;
 
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.model.Category;
 import com.karamasala.ecommerce.service.CategoryService;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,7 @@ public class CategoryController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
-        Category category = categoryService.getCategoryById(id);
-        return category != null ? ResponseEntity.ok(category) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
     @PostMapping
@@ -35,8 +35,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
-        Category updatedCategory = categoryService.updateCategory(id, category);
-        return updatedCategory != null ? ResponseEntity.ok(updatedCategory) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(categoryService.updateCategory(id, category));
     }
 
     @DeleteMapping("/{id}")

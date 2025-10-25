@@ -1,6 +1,7 @@
 package com.karamasala.ecommerce.controller;
 
 import com.karamasala.ecommerce.dto.OrderDto;
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,12 +22,18 @@ public class OrderController {
 
     @PostMapping("/checkout")
     public ResponseEntity<OrderDto> checkout(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            throw new ResourceNotFoundException("User not authenticated");
+        }
         String email = principal.getUsername();
         return ResponseEntity.ok(orders.checkout(email));
     }
 
     @GetMapping
     public ResponseEntity<List<OrderDto>> myOrders(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            throw new ResourceNotFoundException("User not authenticated");
+        }
         String email = principal.getUsername();
         return ResponseEntity.ok(orders.myOrders(email));
     }
@@ -34,6 +41,9 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<OrderDto> get(@AuthenticationPrincipal UserDetails principal,
                                         @PathVariable Long id) {
+        if (principal == null) {
+            throw new ResourceNotFoundException("User not authenticated");
+        }
         String email = principal.getUsername();
         return ResponseEntity.ok(orders.getOrder(email, id));
     }

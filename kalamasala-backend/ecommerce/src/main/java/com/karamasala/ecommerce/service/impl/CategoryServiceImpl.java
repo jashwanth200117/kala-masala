@@ -1,5 +1,6 @@
 package com.karamasala.ecommerce.service.impl;
 
+import com.karamasala.ecommerce.exception.ResourceNotFoundException;
 import com.karamasala.ecommerce.model.Category;
 import com.karamasala.ecommerce.repository.CategoryRepository;
 import com.karamasala.ecommerce.service.CategoryService;
@@ -24,7 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category with id " + id + " not found"));
     }
 
     @Override
@@ -34,13 +35,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category updateCategory(Long id, Category updatedCategory) {
-        Category existing = getCategoryById(id);
+        Category existing = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category with id " + id + " not found"));
         existing.setName(updatedCategory.getName());
         return categoryRepository.save(existing);
     }
 
     @Override
     public void deleteCategory(Long id) {
+        if (!categoryRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Category with id " + id + " not found");
+        }
         categoryRepository.deleteById(id);
     }
 }

@@ -1,25 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 export default function Hero() {
-  const [heroProduct, setHeroProduct] = useState(null);
-
-  useEffect(() => {
-    const fetchHero = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/api/products");
-        const data = await res.json();
-        if (data.length > 0) {
-          setHeroProduct(data[0]); // pick first product as banner
-        }
-      } catch (err) {
-        console.error("Error fetching hero product:", err);
-      }
-    };
-
-    fetchHero();
-  }, []);
-
   return (
     <section className="bg-white">
       <div className="max-w-6xl mx-auto px-4 py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
@@ -73,20 +55,14 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Right - dynamic product image */}
+        {/* Right - static image */}
         <div className="relative">
           <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 shadow-lg">
-            {heroProduct ? (
-              <img
-                src={heroProduct.imageUrl}
-                alt={heroProduct.name}
-                className="w-full h-96 object-cover rounded-lg"
-              />
-            ) : (
-              <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-                Loading image...
-              </div>
-            )}
+            <img
+              src="/images/hero-banner.png" // 👈 static image path
+              alt="Kala Masala Banner"
+              className="w-full h-96 object-cover rounded-lg"
+            />
           </div>
 
           {/* Decorative badge */}
